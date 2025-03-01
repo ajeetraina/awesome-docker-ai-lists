@@ -57,7 +57,7 @@ logger = logging.getLogger("kubetools-tweet-scheduler")
 load_dotenv()
 
 # Configuration
-REPO_OWNER = "collabnix"
+REPO_OWNER = "ajeetraina"  # Updated to your forked repository
 REPO_NAME = "kubetools"
 README_PATH = "README.md"
 HISTORY_FILE = "tweet_history.json"
@@ -208,7 +208,7 @@ def create_tweet_text(tool):
         tweet += f"{tool['url']}\n\n"
     
     # Add hashtags
-    tweet += "#Kubetools #Kubernetes #K8s"
+    tweet += "#Kubetools #Kubernetes #K8s #CloudNative"
     
     return tweet
 
