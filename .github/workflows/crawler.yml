@@ -28,7 +28,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python scripts/github_crawler.py --days 7 --limit 30
+          # First combine the two parts of the crawler script
+          cat scripts/github_crawler.py scripts/github_crawler_part2.py > scripts/crawler_combined.py
+          python scripts/crawler_combined.py --days 7 --limit 30
 
       - name: Output summary
         run: |
