@@ -1,6 +1,6 @@
 # Kubetools Tweet Scheduler
 
-This tool automatically tweets about Kubernetes tools from the [kubetools](https://github.com/collabnix/kubetools) repository at a specified interval (default: 1 hour).
+This tool automatically tweets about Kubernetes tools from the [kubetools](https://github.com/ajeetraina/kubetools) repository at a specified interval (default: 1 hour).
 
 ## Features
 
@@ -8,7 +8,7 @@ This tool automatically tweets about Kubernetes tools from the [kubetools](https
 - Tweets one tool at a time at a configurable interval
 - Keeps track of tweeted tools to ensure variety
 - Includes tool name, category, description, and URL in tweets
-- Adds relevant hashtags for visibility
+- Adds relevant hashtags for visibility (#Kubetools #Kubernetes #K8s #CloudNative)
 
 ## Requirements
 
@@ -82,6 +82,20 @@ docker-compose logs -f
 
 ```bash
 docker-compose down
+```
+
+## Tweet Format
+
+Each tweet includes:
+
+```
+🔧 #Kubernetes Tool: [Tool Name] - Category: [Category]
+
+[Tool Description]
+
+[Tool URL]
+
+#Kubetools #Kubernetes #K8s #CloudNative
 ```
 
 ## Deployment
