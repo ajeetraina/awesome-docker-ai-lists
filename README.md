@@ -1,4 +1,3 @@
-
 # Awesome Docker AI/ML Lists
 
 ![GitHub stars](https://img.shields.io/github/stars/ajeetraina/awesome-docker-ai-lists)
