@@ -1,0 +1,6 @@
+tweepy
+pygithub
+python-dotenv
+pandas
+beautifulsoup4
+markdown
