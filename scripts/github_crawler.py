@@ -13,7 +13,7 @@ import time
 import random
 import argparse
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 from github import Github, GithubException
 
 # Configuration
@@ -21,18 +21,18 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 REPO_OWNER = "ajeetraina"
 REPO_NAME = "awesome-docker-ai-lists"
 CATEGORIES = {
-    "model-context-protocol": ["mcp", "model context protocol", "claude"],
-    "generative-ai": ["genai", "generative ai", "llm", "gpt", "language model"],
-    "hugging-face": ["huggingface", "hugging face", "hf"],
-    "ai-ml-use-cases": ["ai use case", "ml use case", "ai implementation"],
-    "ai-ml-deployment": ["ai deployment", "ml deployment", "model serving"],
-    "developer-tools": ["developer tool", "ai tool", "ml tool"],
-    "assistants-automation": ["ai assistant", "automation", "ai agent", "chatbot"],
-    "healthcare": ["health", "medical", "doctor", "patient", "wellness"],
-    "education": ["education", "learning", "teaching", "course", "student"],
-    "nlp-communication": ["nlp", "natural language", "communication", "text analysis"],
-    "security-monitoring": ["security", "monitoring", "surveillance", "protection"],
-    "documentation": ["documentation", "knowledge", "information", "content management"]
+    "Model Context Protocol": ["mcp", "model context protocol", "claude"],
+    "Generative AI": ["genai", "generative ai", "llm", "gpt", "language model"],
+    "Hugging Face Integration": ["huggingface", "hugging face", "hf"],
+    "AI/ML Use Cases": ["ai use case", "ml use case", "ai implementation"],
+    "AI/ML Deployment": ["ai deployment", "ml deployment", "model serving"],
+    "Developer Tools": ["developer tool", "ai tool", "ml tool"],
+    "AI Assistants & Automation": ["ai assistant", "automation", "ai agent", "chatbot"],
+    "Healthcare Applications": ["health", "medical", "doctor", "patient", "wellness"],
+    "Education & Learning": ["education", "learning", "teaching", "course", "student"],
+    "NLP & Communication": ["nlp", "natural language", "communication", "text analysis"],
+    "Security & Monitoring": ["security", "monitoring", "surveillance", "protection"],
+    "Documentation & Knowledge Management": ["documentation", "knowledge", "information", "content management"]
 }
 
 def setup_argument_parser():
@@ -50,10 +50,10 @@ def search_github_repositories(query, days_ago, limit=20):
         sys.exit(1)
     
     g = Github(GITHUB_TOKEN)
-    date_filter = datetime.now() - datetime.timedelta(days=days_ago)
+    date_filter = datetime.now() - timedelta(days=days_ago)
     date_str = date_filter.strftime("%Y-%m-%d")
     
-    query = f"{query} pushed:>{date_str} language:python language:javascript"
+    query = f"{query} pushed:>{date_str}"
     print(f"Searching GitHub with query: {query}")
     
     try:
@@ -81,7 +81,7 @@ def has_docker_and_ai_ml(repo_info):
     docker_terms = ["docker", "container", "containerization", "dockerfile"]
     ai_ml_terms = ["ai", "ml", "machine learning", "artificial intelligence", 
                   "deep learning", "neural network", "tensorflow", "pytorch",
-                  "model", "prediction", "analysis", "analytics"]
+                  "model", "prediction", "analysis", "analytics", "llm"]
     
     # Check name, description and topics
     content = (repo_info["name"] + " " + 
@@ -106,7 +106,7 @@ def determine_category(repo_info):
     
     if max(scores.values(), default=0) > 0:
         return max(scores.items(), key=lambda x: x[1])[0]
-    return "ai-ml-use-cases"  # Default category
+    return "AI/ML Use Cases"  # Default category
 
 def format_entry_for_readme(repo_info, category):
     """Format repository information for README entry"""
@@ -121,10 +121,10 @@ def format_entry_for_readme(repo_info, category):
     
     return f"| {name} | {description} | {type_label} | [View]({repo_info['url']}) |"
 
-def create_pull_request(repo_info, category_name, entry_markdown, g):
+def create_pull_request(repo_info, category_name, entry_markdown, github_client):
     """Create a pull request to add new repository to the README"""
     try:
-        repo = g.get_repo(f"{REPO_OWNER}/{REPO_NAME}")
+        repo = github_client.get_repo(f"{REPO_OWNER}/{REPO_NAME}")
         main_branch = repo.get_branch("main")
         
         # Create a new branch
@@ -132,7 +132,8 @@ def create_pull_request(repo_info, category_name, entry_markdown, g):
         repo.create_git_ref(ref=f"refs/heads/{branch_name}", sha=main_branch.commit.sha)
         
         # Get the current README
-        readme_content = repo.get_contents("README.md", ref=branch_name).decoded_content.decode("utf-8")
+        readme_file = repo.get_contents("README.md", ref=branch_name)
+        readme_content = readme_file.decoded_content.decode("utf-8")
         
         # Find the section to update
         section_pattern = f"## {category_name}\n\n"
@@ -158,7 +159,7 @@ def create_pull_request(repo_info, category_name, entry_markdown, g):
             path="README.md",
             message=f"Add {repo_info['name']} to {category_name}",
             content=updated_content,
-            sha=repo.get_contents("README.md", ref=branch_name).sha,
+            sha=readme_file.sha,
             branch=branch_name
         )
         
@@ -180,8 +181,62 @@ def create_pull_request(repo_info, category_name, entry_markdown, g):
         print(f"Error creating PR: {e}")
         return False
 
+def search_blogs(days_ago=30, limit=10):
+    """Search for blog posts about Docker AI/ML"""
+    # Example: this would need to be customized based on actual blog sources
+    blog_sources = [
+        "https://www.docker.com/blog/tag/ai-ml/feed/",
+        "https://collabnix.com/category/docker/feed/"
+    ]
+    
+    blogs = []
+    
+    for source in blog_sources:
+        try:
+            response = requests.get(source, timeout=10)
+            # Basic XML parsing - in a real implementation, use a proper XML/RSS parser
+            if response.status_code == 200:
+                # Extract blog entries (simplified example)
+                # In a real implementation, use proper RSS parsing
+                content = response.text
+                # For demonstration - would need proper parsing in real implementation
+                entries = re.findall(r'<item>(.+?)</item>', content, re.DOTALL)
+                
+                for entry in entries[:limit]:
+                    title_match = re.search(r'<title>(.+?)</title>', entry)
+                    link_match = re.search(r'<link>(.+?)</link>', entry)
+                    desc_match = re.search(r'<description>(.+?)</description>', entry)
+                    date_match = re.search(r'<pubDate>(.+?)</pubDate>', entry)
+                    
+                    if title_match and link_match:
+                        title = title_match.group(1)
+                        link = link_match.group(1)
+                        description = desc_match.group(1) if desc_match else ""
+                        date_str = date_match.group(1) if date_match else ""
+                        
+                        # Check if it's within our date range
+                        # This is simplified - would need proper date parsing
+                        if date_str and "Docker" in title and ("AI" in title or "ML" in title):
+                            blogs.append({
+                                "name": title,
+                                "full_name": title,
+                                "description": description[:100],
+                                "url": link,
+                                "type": "Blog"
+                            })
+        except Exception as e:
+            print(f"Error fetching blog from {source}: {e}")
+    
+    return blogs
+
 def main():
     args = setup_argument_parser()
+    
+    if not GITHUB_TOKEN:
+        print("Error: GITHUB_TOKEN environment variable not set")
+        sys.exit(1)
+    
+    g = Github(GITHUB_TOKEN)
     
     # Docker AI/ML related search queries
     search_queries = [
@@ -195,7 +250,6 @@ def main():
         "docker llm"
     ]
     
-    g = Github(GITHUB_TOKEN)
     all_repos = []
     
     for query in search_queries:
@@ -215,14 +269,13 @@ def main():
         
         if has_docker_and_ai_ml(repo_info):
             category = determine_category(repo_info)
-            category_name = category.replace("-", " ").title()
             entry = format_entry_for_readme(repo_info, category)
             
-            print(f"  - Identified as Docker AI/ML content in category: {category_name}")
+            print(f"  - Identified as Docker AI/ML content in category: {category}")
             print(f"  - Entry: {entry}")
             
             if not args.dry_run:
-                success = create_pull_request(repo_info, category_name, entry, g)
+                success = create_pull_request(repo_info, category, entry, g)
                 if success:
                     added_count += 1
                 # Add some delay between PRs
@@ -230,7 +283,25 @@ def main():
         else:
             print(f"  - Not identified as Docker AI/ML content, skipping")
     
-    print(f"Done! Created {added_count} pull requests.")
+    # Optionally search blogs as well
+    if args.days > 7:  # Only search blogs for longer timeframes
+        print("\nSearching for blog posts...")
+        blogs = search_blogs(args.days)
+        for blog in blogs:
+            category = determine_category(blog)
+            entry = format_entry_for_readme(blog, category)
+            
+            print(f"  - Blog: {blog['name']}")
+            print(f"  - Category: {category}")
+            print(f"  - Entry: {entry}")
+            
+            if not args.dry_run:
+                success = create_pull_request(blog, category, entry, g)
+                if success:
+                    added_count += 1
+                time.sleep(random.randint(5, 15))
+    
+    print(f"\nDone! Created {added_count} pull requests.")
 
 if __name__ == "__main__":
     main()
